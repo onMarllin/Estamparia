@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body style="margin:0">
+<title>Golpe de Prensa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#14181d;--panel:#1d232a;--panel2:#262e37;--edge:#0a0d10;--line:#394451;--text:#e9edf0;--muted:#98a6b3;
+  --yel:#f2c230;--yelDim:#8a6f1e;--green:#5cc26b;--red:#ec5a50;--blue:#55a3e6;--orange:#f0923a;--grey:#6d7a87;
+  --btn:#f2c230;--btnText:#1a1406;--btnSh:#9c7a14;--btnHi:#ffe07a;
+  --display:'Silkscreen','Pixelify Sans',ui-monospace,'Courier New',monospace;
+  --font:'Pixelify Sans',ui-monospace,'Courier New',monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+body.locked{overflow:hidden}
+.page{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+canvas.px,img.px{image-rendering:pixelated;image-rendering:crisp-edges}
+h1,h2,h3{text-wrap:balance;margin:0}
+h2{font-size:20px;font-weight:700}
+h3{font-size:17px;font-weight:600}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}.tiny{font-size:14px;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--orange)}.info{color:var(--blue)}
+
+/* ---------- cabeçalho ---------- */
+header.top{background:var(--panel);border:3px solid var(--edge);border-top:0;margin-inline:-16px;padding:12px 16px 0}
+.brandrow{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:13px;color:var(--yel);letter-spacing:.06em}
+.plant{font-family:var(--display);font-size:clamp(20px,4.2vw,32px);font-weight:700;line-height:1.1;overflow-wrap:anywhere}
+.clock{font-family:var(--display);font-size:18px;color:var(--muted)}
+.hudrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-top:10px;padding-bottom:12px}
+.cash{font-family:var(--display);font-size:24px;font-weight:700}
+.cash.neg{color:var(--red)}
+.hudrow .s{color:var(--muted);font-size:15px}.hudrow .s b{color:var(--text);font-weight:600}
+.speed{display:flex;gap:4px;margin-left:auto}
+.speed button{font:inherit;font-size:14px;font-weight:600;color:var(--text);background:var(--panel2);border:2px solid var(--edge);padding:4px 10px;cursor:pointer}
+.speed button[aria-pressed="true"]{background:var(--yel);color:var(--btnText)}
+.hazard{height:10px;margin-inline:-16px;background:repeating-linear-gradient(-45deg,var(--yel) 0 12px,var(--edge) 12px 24px)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:3px solid var(--edge);border-top:0;margin-inline:-16px;background:var(--panel2)}
+.kpi{padding:8px 14px;border-left:2px solid var(--line);min-width:0}
+.kpi:first-child{border-left:0}
+.kpi dt{font-size:13px;color:var(--muted)}
+.kpi dd{margin:0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.mission{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border:2px dashed var(--yelDim);background:#1f1d14}
+.mission .tag{font-family:var(--display);font-size:12px;color:var(--btnText);background:var(--yel);padding:2px 6px;flex:none}
+.mission .rw{margin-left:auto;color:var(--yel);white-space:nowrap;font-size:15px}
+
+/* ---------- abas ---------- */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:var(--bg);padding:10px 0 8px;margin-top:4px}
+.tabs button{font:inherit;font-size:15px;font-weight:600;color:var(--text);background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 -3px 0 var(--line);padding:8px 4px 10px;cursor:pointer;position:relative}
+.tabs button[aria-current="page"]{background:var(--yel);color:var(--btnText);box-shadow:inset 0 -3px 0 var(--btnSh)}
+.badge{position:absolute;top:-9px;right:-4px;background:var(--red);color:#fff;border:2px solid var(--edge);font-size:12px;min-width:22px;padding:0 4px}
+
+/* ---------- blocos ---------- */
+.panel{background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--line);padding:14px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.phead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.grid>*{min-width:0}
+.card{background:var(--panel2);border:3px solid var(--edge);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.row{display:flex;align-items:center;gap:10px}.row.wrap{flex-wrap:wrap}.row.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.pill{display:inline-block;font-size:13px;padding:1px 7px;border:2px solid currentColor;white-space:nowrap}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin:0}
+.facts div{background:var(--panel);border:2px solid var(--line);padding:4px 8px;min-width:0}
+.facts dt{font-size:12px;color:var(--muted)}.facts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:var(--edge);border:2px solid var(--edge)}
+.bar i{display:block;height:100%;width:0;background:var(--green);transition:width .3s linear}
+.bar.y i{background:var(--yel)}.bar.b i{background:var(--blue)}.bar.r i{background:var(--red)}
+.barlab{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);gap:8px}
+.empty{color:var(--muted);padding:6px 0}
+
+/* ---------- botões ---------- */
+.btn{font:inherit;font-size:15px;font-weight:600;color:var(--btnText);background:var(--btn);border:3px solid var(--edge);box-shadow:inset 0 -3px 0 var(--btnSh),inset 0 3px 0 var(--btnHi);padding:6px 12px 8px;cursor:pointer;white-space:nowrap}
+.btn:active:not(:disabled){transform:translateY(2px)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:var(--panel);color:var(--text);box-shadow:inset 0 -3px 0 var(--line)}
+.btn.danger{background:var(--panel);color:var(--red);box-shadow:inset 0 -3px 0 var(--line)}
+.btn.sm{font-size:14px;padding:4px 9px 6px}
+.btn.wide{width:100%}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+select,input[type=text]{font:inherit;font-size:15px;color:var(--text);background:var(--panel);border:2px solid var(--line);padding:5px 8px;width:100%;min-width:0}
+
+/* ---------- prensas ---------- */
+.press{border-color:var(--edge)}
+.press .ph{display:flex;gap:12px;align-items:flex-start}
+.press canvas{width:96px;height:80px;flex:none;background:#101419;border:2px solid var(--edge)}
+.press .ton{font-family:var(--display);font-size:13px;color:var(--muted);margin-left:6px}
+.state{font-weight:600;font-size:15px}
+.st-run{color:var(--green)}.st-setup{color:var(--yel)}.st-broken{color:var(--red)}.st-noop{color:var(--red)}.st-pm{color:var(--blue)}.st-nomat{color:var(--orange)}.st-idle{color:var(--grey)}
+.press.alert{box-shadow:inset 0 0 0 2px var(--red)}
+.ord{border-top:2px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:4px}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:15px}
+.log li{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.log time{font-variant-numeric:tabular-nums;color:var(--muted)}
+.log li.bad span{color:var(--red)}.log li.good span{color:var(--green)}.log li.warn span{color:var(--orange)}.log li.info span{color:var(--blue)}
+
+/* ---------- qualidade ---------- */
+.formula{display:flex;flex-direction:column;gap:6px;font-variant-numeric:tabular-nums}
+.formula .f{display:grid;grid-template-columns:130px 1fr auto;gap:10px;align-items:baseline;padding:6px 0;border-bottom:2px dashed var(--line)}
+.formula .f b{font-family:var(--display);font-size:16px;text-align:right}
+.formula .f.total{border-bottom:0}
+.formula .f.total b{font-size:24px;color:var(--yel)}
+.seg{display:flex;gap:4px}
+.seg button{font:inherit;font-size:14px;color:var(--text);background:var(--panel2);border:2px solid var(--edge);padding:3px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--yel);color:var(--btnText)}
+.stack{display:flex;height:18px;border:2px solid var(--edge);background:var(--edge)}
+.stack i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;margin-right:5px;background:var(--c)}
+.hist{display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:18px;border-bottom:2px solid var(--line)}
+.hist .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;min-width:0}
+.hist .col i{display:block;width:100%;max-width:34px;background:var(--blue)}
+.hist .col i.hi{background:var(--green)}.hist .col i.lo{background:var(--red)}
+.hist .col span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.histx{display:flex;gap:6px}.histx span{flex:1;text-align:center;font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--muted);text-align:left;font-size:13px;padding:4px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.r,th.r{text-align:right}
+.steps{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
+.steps span{font-family:var(--display);font-size:11px;text-align:center;padding:3px 0;background:var(--panel);border:2px solid var(--line);color:var(--muted)}
+.steps span.done{background:var(--green);color:#0d1a10;border-color:var(--edge)}
+.steps span.now{background:var(--yel);color:var(--btnText);border-color:var(--edge)}
+.check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.check li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start}
+.check li i{font-style:normal;font-weight:700}
+
+/* ---------- manual ---------- */
+.concept{border-top:2px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.concept:first-of-type{border-top:0;padding-top:0}
+.concept h3{color:var(--yel)}
+.eq{font-family:var(--display);font-size:14px;background:var(--panel2);border:2px solid var(--line);padding:8px 10px;overflow-x:auto;white-space:nowrap}
+ol.d8{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+ol.d8 li{display:grid;grid-template-columns:34px 1fr;gap:8px}
+ol.d8 b{font-family:var(--display);font-size:13px;color:var(--yel)}
+
+/* ---------- modal e avisos ---------- */
+[hidden]{display:none!important}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(5,7,9,.78);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--line);width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+@media (min-width:640px){.modal{align-items:center}.sheet{max-height:86vh}}
+.answers{display:flex;flex-direction:column;gap:6px}
+.answers button{font:inherit;font-size:15px;text-align:left;color:var(--text);background:var(--panel2);border:3px solid var(--edge);padding:9px 12px;cursor:pointer}
+.answers button:hover:not(:disabled){border-color:var(--yel)}
+.answers button.right{border-color:var(--green);box-shadow:inset 0 0 0 2px var(--green)}
+.answers button.wrong{border-color:var(--red);box-shadow:inset 0 0 0 2px var(--red)}
+.verdict{font-family:var(--display);font-size:20px}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;gap:6px;width:min(calc(100vw - 32px),460px);pointer-events:none}
+.toast{background:var(--panel2);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--line);padding:8px 12px;font-size:15px;animation:pop .2s steps(3)}
+.toast.good{box-shadow:inset 0 0 0 2px var(--green)}.toast.bad{box-shadow:inset 0 0 0 2px var(--red)}.toast.warn{box-shadow:inset 0 0 0 2px var(--orange)}
+@keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+@media (max-width:640px){
+  body{font-size:16px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpi:nth-child(3){border-left:0}
+  .kpi:nth-child(n+3){border-top:2px solid var(--line)}
+  .tabs{grid-template-columns:repeat(5,1fr);gap:4px}
+  .tabs button{font-size:13px;padding:7px 2px 9px}
+  .speed{margin-left:0;width:100%}
+  .speed button{flex:1}
+  .grid{grid-template-columns:1fr}
+  .formula .f{grid-template-columns:1fr auto}
+  .formula .f span.calc{grid-column:1/-1;order:3;font-size:14px;color:var(--muted)}
+  .mission{flex-wrap:wrap}.mission .rw{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="page">
+<header class="top">
+  <div class="brandrow">
+    <div><div class="brand">Golpe de Prensa</div><h1 class="plant" id="plantName">Estamparia</h1></div>
+    <div class="clock num" data-l="clock"></div>
+  </div>
+  <div class="hudrow">
+    <span class="cash num" data-l="cash"></span>
+    <span class="s">Reputação <b class="num" data-l="rep"></b></span>
+    <span class="s">Prensas <b class="num" data-l="npress"></b></span>
+    <span class="s">Equipe <b class="num" data-l="nstaff"></b></span>
+    <div class="speed" role="group" aria-label="Velocidade do tempo">
+      <button data-act="speed" data-arg="0">Pausar</button>
+      <button data-act="speed" data-arg="1">1×</button>
+      <button data-act="speed" data-arg="3">3×</button>
+      <button data-act="speed" data-arg="10">10×</button>
+    </div>
+  </div>
+  <div class="hazard" aria-hidden="true"></div>
+</header>
+<dl class="kpis">
+  <div class="kpi"><dt>OEE de ontem</dt><dd data-l="k-oee">–</dd></div>
+  <div class="kpi"><dt>PPM das últimas 5 entregas</dt><dd data-l="k-ppm">–</dd></div>
+  <div class="kpi"><dt>Entregas no prazo</dt><dd data-l="k-otd">–</dd></div>
+  <div class="kpi"><dt>Auditoria IATF</dt><dd data-l="k-aud">–</dd></div>
+</dl>
+<div id="mission"></div>
+<nav class="tabs" aria-label="Seções">
+  <button data-act="tab" data-arg="fabrica">Fábrica<span class="badge" id="b-fab" hidden></span></button>
+  <button data-act="tab" data-arg="pedidos">Pedidos<span class="badge" id="b-ped" hidden></span></button>
+  <button data-act="tab" data-arg="equipe">Equipe</button>
+  <button data-act="tab" data-arg="qualidade">Qualidade<span class="badge" id="b-qual" hidden></span></button>
+  <button data-act="tab" data-arg="manual">Manual</button>
+</nav>
+<main id="view"></main>
+</div>
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true"><div class="sheet" id="mbody"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<script>
+// ================== MOTOR DA FÁBRICA ==================
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const rint=(a,b)=>Math.floor(rnd(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let _uid=Date.now()%100000;
+const uid=()=>(++_uid).toString(36)+Math.floor(Math.random()*999).toString(36);
+const DAY=1440;
+
+const PRESSES={
+  p400:{nome:'Prensa 400 t',t:400,gpm:20,preco:90000},
+  p600:{nome:'Prensa 600 t',t:600,gpm:16,preco:180000},
+  p800:{nome:'Prensa 800 t',t:800,gpm:12,preco:340000}
+};
+const MAX_PRESSES=8;
+const PARTS=[
+  {id:'sup',nome:'Suporte do escapamento',t:400,preco:2.8,mat:1.9,def:0.006},
+  {id:'dob',nome:'Reforço da dobradiça',t:400,preco:3.35,mat:2.3,def:0.007},
+  {id:'trv',nome:'Travessa do painel',t:600,preco:5.6,mat:3.65,def:0.007},
+  {id:'col',nome:'Reforço da coluna B',t:600,preco:6.35,mat:4.3,def:0.008},
+  {id:'lon',nome:'Longarina dianteira',t:800,preco:10.5,mat:6.3,def:0.008},
+  {id:'ass',nome:'Assoalho traseiro',t:800,preco:12.0,mat:7.6,def:0.009}
+];
+const CLIENTES=['Aurora Automotiva','Veloce Motors','Tauru Caminhões','Nimbus Agrícola','Orion Utilitários'];
+const ROLES={
+  operador:{nome:'Operador',pl:'Operadores',sal:350,desc:'Opera uma prensa. Com mais nível, trabalha em ritmo maior, gera menos defeito e percebe mais peças ruins.'},
+  preparador:{nome:'Preparador',pl:'Preparadores',sal:450,desc:'Faz o setup (troca de ferramenta). Com preparador livre o setup leva de 30 a 90 min; sem ele, o operador faz sozinho em 3 h.'},
+  lider:{nome:'Líder de célula',pl:'Líderes',sal:650,cob:4,desc:'Cada líder acompanha até 4 prensas: aumenta o ritmo (performance) e faz os operadores ganharem experiência mais rápido.'},
+  inspetor:{nome:'Inspetor de qualidade',pl:'Inspetores',sal:480,cob:3,desc:'Cada inspetor cobre até 3 prensas e segura peças com defeito antes de saírem para o cliente. Também acelera o 8D.'},
+  tecnico:{nome:'Técnico de manutenção',pl:'Técnicos',sal:550,cob:3,desc:'Cada técnico cobre até 3 prensas: faz preventiva sozinho quando a condição cai e conserta quebras mais rápido.'},
+  metrologista:{nome:'Metrologista',pl:'Metrologistas',sal:700,cob:99,desc:'Mantém os instrumentos calibrados e o MSA em dia. A inspeção fica mais confiável em toda a planta, e a auditoria cobra essa função.'}
+};
+const ROLE_ORDER=['operador','preparador','lider','inspetor','tecnico','metrologista'];
+const NOMES=['João','Maria','José','Ana','Francisco','Antônia','Carlos','Francisca','Paulo','Adriana','Pedro','Juliana','Lucas','Márcia','Luiz','Fernanda','Marcos','Patrícia','Rafael','Aline','Severino','Josefa','Raimundo','Luciana','Daniel','Cícera','Tiago','Rita','Edson','Bruna','Gilberto','Sônia','Wellington','Débora','Reginaldo','Priscila'];
+const SOBRE=['Silva','Santos','Oliveira','Souza','Lima','Pereira','Ferreira','Costa','Rodrigues','Almeida','Nascimento','Araújo','Barbosa','Cavalcanti','Melo'];
+
+const partById=id=>PARTS.find(p=>p.id===id);
+const MAXLV=6;
+const xpNeed=lv=>Math.round(2+lv*1.5);
+function makeStaff(role,lv){return {id:uid(),nome:pick(NOMES)+' '+pick(SOBRE),role,lv,xp:0};}
+const salario=s=>Math.round(ROLES[s.role].sal*(1+0.25*(s.lv-1)));
+const admissao=s=>salario(s)*3;
+const rescisao=s=>salario(s)*5;
+const trainCost=s=>Math.round(1500*s.lv);
+
+// ---------- efeitos da equipe ----------
+function roleInfo(S,role){
+  const ms=S.staff.filter(s=>s.role===role);
+  const n=S.press.length||1, cob=ROLES[role].cob||1;
+  const lv=ms.length?ms.reduce((a,s)=>a+s.lv,0)/ms.length:0;
+  const cov=role==='metrologista'?(ms.length?1:0):Math.min(1,ms.length*cob/n);
+  return {n:ms.length,lv,cov};
+}
+function effects(S){
+  const L=roleInfo(S,'lider'),I=roleInfo(S,'inspetor'),T=roleInfo(S,'tecnico'),M=roleInfo(S,'metrologista');
+  const metro=M.n?0.06+0.015*M.lv:0;
+  return {
+    lead:L.cov*(0.03+0.012*L.lv), leadXp:L.cov*0.6,
+    insp:I.n?I.cov*Math.min(0.94,0.5+0.06*I.lv+metro):0,
+    tecCov:T.cov, tecLv:T.lv, L,I,T,M
+  };
+}
+const opPerf=lv=>Math.min(0.95,0.66+0.045*(lv-1));
+const opDet=lv=>0.4+0.05*(lv-1);
+const opDefMult=lv=>1.2-0.06*(lv-1);
+const condDefMult=c=>1+(100-c)/60;
+const hazard=c=>(1/5000)*(1+Math.pow((100-c)/25,2));
+
+function newDay(){return {plan:0,run:0,prod:0,ideal:0,def:0,scrap:0,esc:0,brk:0,loss:{setup:0,brk:0,mat:0,pm:0,noop:0}};}
+
+function makeOrder(S,forceT){
+  const maxT=Math.max(400,...S.press.map(p=>PRESSES[p.tipo].t));
+  const tons=[400,600,800].filter(t=>t<=Math.min(800,maxT+200));
+  const t=forceT||pick(tons);
+  const part=pick(PARTS.filter(p=>p.t===t));
+  const rate=PRESSES['p'+t].gpm*0.6*DAY;
+  const rep=S.rep;
+  const ppm=pick(rep<25?[5000,3000]:rep<50?[3000,1500]:rep<75?[1500,800]:[800,400]);
+  const pm={5000:0.96,3000:1,1500:1.06,800:1.12,400:1.2}[ppm];
+  const qtd=Math.max(2000,Math.round(rate*rnd(0.35,1.1)/500)*500);
+  const dias=Math.max(1,Math.ceil(qtd/rate*1.7+0.4));
+  return {id:uid(),cli:pick(CLIENTES),part:part.id,qtd,preco:+(part.preco*pm*(1+S.rep/500)).toFixed(2),ppm,dias,st:'oferta',exp:S.t+2*DAY,good:0,esc:0,scrap:0,press:null,due:null};
+}
+
+// ---------- simulação de uma prensa ----------
+function stepPress(S,p,dt,E,ev){
+  let guard=0;
+  while(dt>1e-6&&guard++<8){
+    const o=p.ped?S.orders.find(x=>x.id===p.ped):null;
+    const d=p.day;
+    if(['setup','broken','pm','nomat'].includes(p.st)){
+      const use=Math.min(dt,p.rem); p.rem-=use; dt-=use;
+      if(o){d.plan+=use; d.loss[{setup:'setup',broken:'brk',pm:'pm',nomat:'mat'}[p.st]]+=use;}
+      if(p.rem<=1e-6){
+        if(p.st==='setup'){p.part=p.setupPart; if(p.prep){S.prepBusy=S.prepBusy.filter(x=>x!==p.prep);p.prep=null;} ev('setup_fim',{p});}
+        if(p.st==='pm'){p.cond=100;ev('pm_fim',{p});}
+        if(p.st==='broken'){p.cond=Math.max(p.cond,75);ev('reparo_fim',{p});}
+        p.st='idle';
+      }
+      continue;
+    }
+    if(!o){p.st='idle';return;}
+    const op=p.op?S.staff.find(s=>s.id===p.op):null;
+    if(!op){p.st='noop';d.plan+=dt;d.loss.noop+=dt;return;}
+    if(p.part!==o.part){
+      const free=S.staff.filter(s=>s.role==='preparador'&&!S.prepBusy.includes(s.id)).sort((a,b)=>b.lv-a.lv)[0];
+      if(free){p.prep=free.id;S.prepBusy.push(free.id);p.rem=Math.max(30,90-12*(free.lv-1));}
+      else{p.prep=null;p.rem=180;}
+      p.st='setup';p.setupPart=o.part;p.setupTot=p.rem;
+      continue;
+    }
+    // preventiva automática com técnico
+    if(p.cond<55&&E.tecCov>0&&Math.random()<E.tecCov*dt/15){
+      p.st='pm';p.rem=Math.max(30,60-6*(E.tecLv-1));p.remTot=p.rem;ev('pm',{p,auto:true});continue;
+    }
+    // quebra
+    if(Math.random()<hazard(p.cond)*dt){
+      const withTec=Math.random()<E.tecCov;
+      p.st='broken';p.rem=withTec?Math.max(60,150-15*(E.tecLv-1)):480;p.remTot=p.rem;
+      const custo=withTec?2000:8000; S.cash-=custo;
+      d.brk++;S.tot.brk++;ev('quebra',{p,withTec,custo});continue;
+    }
+    p.st='run';
+    const part=partById(o.part);
+    const perf=Math.min(0.97,opPerf(op.lv)+E.lead);
+    const prod=PRESSES[p.tipo].gpm*perf*dt;
+    const defRate=S.def[o.part]*opDefMult(op.lv)*condDefMult(p.cond);
+    const gen=prod*defRate;
+    const det=1-(1-opDet(op.lv))*(1-E.insp);
+    const scrap=gen*det, esc=gen-scrap;
+    o.good+=prod-scrap;o.esc+=esc;o.scrap+=scrap;
+    S.cash-=prod*part.mat;
+    p.cond=Math.max(0,p.cond-dt/40);
+    d.plan+=dt;d.run+=dt;d.prod+=prod;d.ideal+=PRESSES[p.tipo].gpm*dt;d.def+=gen;d.scrap+=scrap;d.esc+=esc;
+    S.tot.prod+=prod;
+    if(o.good>=o.qtd) finishOrder(S,p,o,ev);
+    return;
+  }
+}
+function finishOrder(S,p,o,ev){
+  const late=S.t>o.due;
+  const ppm=o.esc/o.qtd*1e6;
+  const receita=o.qtd*o.preco*(late?0.9:1);
+  S.cash+=receita;
+  const comp=ppm>o.ppm;
+  let custoRec=0;
+  if(comp){custoRec=Math.round(3000+o.esc*o.preco*2);S.cash-=custoRec;S.rep=clamp(S.rep-6,0,100);
+    S.comps.push({id:uid(),cli:o.cli,part:o.part,ppm,ppmMax:o.ppm,dia:dayOf(S.t),st:'aberta',ini:null,fim:null});}
+  S.rep=clamp(S.rep+(late?-3:1)+(comp?0:1),0,100);
+  S.hist.push({cli:o.cli,part:o.part,qtd:o.qtd,esc:o.esc,scrap:o.scrap,late,ppm,ppmMax:o.ppm,receita,custoRec,dia:dayOf(S.t)});
+  if(S.hist.length>40) S.hist.shift();
+  S.tot.ped++; if(!late)S.tot.noPrazo++;
+  p.ped=null;
+  S.orders=S.orders.filter(x=>x!==o);
+  ev('entrega',{o,comp,late,ppm,receita,custoRec});
+  autoAssign(S);
+}
+function autoAssign(S){
+  for(const p of S.press){
+    if(p.ped) continue;
+    const t=PRESSES[p.tipo].t;
+    const cands=S.orders.filter(x=>!x.press&&partById(x.part).t<=t);
+    // prefere a peça já montada (evita setup), depois o prazo mais curto
+    cands.sort((a,b)=>((a.part===p.part?0:1)-(b.part===p.part?0:1))||(a.due-b.due));
+    const o=cands[0];
+    if(o){o.press=p.id;p.ped=o.id;}
+  }
+}
+const dayOf=t=>Math.floor(t/DAY)+1;
+function dayRollover(S,ev){
+  const d=dayOf(S.t)-1;
+  const pay=S.staff.reduce((a,s)=>a+salario(s),0); S.cash-=pay;
+  const E=effects(S);
+  const agg=newDay();
+  for(const p of S.press){
+    for(const k of ['plan','run','prod','ideal','def','scrap','esc','brk']) agg[k]+=p.day[k];
+    for(const k in agg.loss) agg.loss[k]+=p.day.loss[k];
+    p.day=newDay();
+  }
+  S.days.push({d,...agg,pay}); if(S.days.length>14) S.days.shift();
+  const ups=[];
+  for(const s of S.staff){
+    const working=s.role!=='operador'||S.press.some(p=>p.op===s.id);
+    if(!working) continue;
+    s.xp+=1+(s.role==='operador'?E.leadXp:0);
+    while(s.lv<MAXLV&&s.xp>=xpNeed(s.lv)){s.xp-=xpNeed(s.lv);s.lv++;ups.push(s);}
+    if(s.lv>=MAXLV) s.xp=0;
+  }
+  S.board=S.board.filter(o=>o.exp>S.t);
+  const want=Math.min(6,2+S.press.length);
+  while(S.board.length<want) S.board.push(makeOrder(S));
+  S.cands=makeCands(S);
+  ev('dia',{d,pay,ups});
+  const running=S.press.filter(p=>p.st==='run');
+  if(running.length&&Math.random()<0.3){const p=pick(running);p.st='nomat';p.rem=rint(60,150);p.remTot=p.rem;ev('bobina',{p});}
+}
+function makeCands(S){
+  const roles=['operador','operador','operador','preparador','lider','inspetor','inspetor','tecnico','tecnico','metrologista'];
+  const mx=Math.min(4,1+Math.floor(S.rep/25));
+  const out=[makeStaff('operador',rint(1,mx))];
+  while(out.length<5) out.push(makeStaff(pick(roles),rint(1,mx)));
+  return out;
+}
+function step8D(S,ev){
+  const I=roleInfo(S,'inspetor');
+  for(const c of S.comps){
+    if(c.st==='8d'&&S.t>=c.fim){
+      c.st='fechada';
+      const base=partById(c.part).def;
+      S.def[c.part]=Math.max(base*0.15,S.def[c.part]*0.55);
+      S.rep=clamp(S.rep+3,0,100);
+      ev('8d_fim',{c});
+    }
+  }
+}
+function simStep(S,dt,ev){
+  const E=effects(S);
+  autoAssign(S);
+  for(const p of S.press) stepPress(S,p,dt,E,ev);
+  const before=dayOf(S.t);
+  S.t+=dt;
+  step8D(S,ev);
+  if(dayOf(S.t)>before) dayRollover(S,ev);
+}
+function newState(nome){
+  const S={v:1,nome:nome||'Estamparia Aço Norte',t:6*60,cash:120000,rep:10,press:[],staff:[],orders:[],board:[],cands:[],prepBusy:[],hist:[],days:[],comps:[],
+    tot:{prod:0,brk:0,ped:0,noPrazo:0},def:{},speed:1,mis:0,nextAud:7,auds:[],log:[],over:false};
+  PARTS.forEach(p=>S.def[p.id]=p.def);
+  addPress(S,'p400');
+  const op=makeStaff('operador',1); S.staff.push(op); S.press[0].op=op.id;
+  S.board=[makeOrder(S,400),makeOrder(S,400),makeOrder(S,400)];
+  S.cands=makeCands(S);
+  return S;
+}
+function addPress(S,tipo){
+  const p={id:uid(),tipo,op:null,ped:null,part:null,setupPart:null,st:'idle',rem:0,remTot:0,cond:100,day:newDay(),n:S.press.length+1};
+  S.press.push(p);
+  const free=S.staff.find(s=>s.role==='operador'&&!S.press.some(x=>x.op===s.id));
+  if(free) p.op=free.id;
+  return p;
+}
+function acceptOrder(S,o){
+  S.board=S.board.filter(x=>x!==o);
+  o.st='ativo';o.due=S.t+o.dias*DAY;
+  S.orders.push(o);autoAssign(S);
+}
+
+// ================== INTERFACE ==================
+const $=s=>document.querySelector(s);
+const brl=n=>(n<0?'−':'')+'R$ '+Math.abs(Math.round(n)).toLocaleString('pt-BR');
+const num=n=>Math.round(n).toLocaleString('pt-BR');
+const pct=x=>(isFinite(x)?(x*100):0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const hhmm=t=>{const m=Math.floor(((t%DAY)+DAY)%DAY);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+const dur=m=>{m=Math.max(0,Math.round(m));const d=Math.floor(m/DAY),h=Math.floor(m%DAY/60),mi=m%60;return d?`${d}d ${h}h`:h?`${h}h${mi?String(mi).padStart(2,'0'):''}`:`${mi} min`;};
+const hrs=m=>(m/60).toLocaleString('pt-BR',{maximumFractionDigits:1})+' h';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const KEY='golpe-de-prensa-v1';
+let S=null, tab='fabrica', modal=null, sig='', lastSave=0, oeeView='ontem', audit=null;
+function save(){if(!S)return;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function loadSave(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===1&&s.press)return s;}}catch(e){}return null;}
+
+const pressById=id=>S.press.find(p=>p.id===id);
+const staffById=id=>S.staff.find(s=>s.id===id);
+const orderById=id=>S.orders.find(o=>o.id===id);
+const hasTec=()=>S.staff.some(s=>s.role==='tecnico');
+const PM_EXT=4000, COST_8D=3000, BANKRUPT=-80000;
+
+// ---------- eventos da simulação ----------
+function log(txt,k=''){S.log.unshift({t:S.t,txt,k});if(S.log.length>40)S.log.pop();}
+function toast(msg,k=''){const box=$('#toasts');while(box.children.length>=3)box.firstChild.remove();const el=document.createElement('div');el.className='toast '+k;el.textContent=msg;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),4200);}
+function ev(type,d){
+  const pn=p=>`Prensa ${p.n}`;
+  switch(type){
+    case 'entrega':{const o=d.o,part=partById(o.part);
+      if(d.comp){const m=`Reclamação da ${o.cli}: ${num(d.ppm)} PPM, acima do limite de ${num(o.ppm)}. Seleção e multa: ${brl(d.custoRec)}.`;log(m+' Abra um 8D na aba Qualidade.','bad');toast(m,'bad');}
+      const m2=`${o.cli} recebeu ${num(o.qtd)} peças (${part.nome.toLowerCase()}) com ${num(d.ppm)} PPM${d.late?', com atraso':''}. Receita ${brl(d.receita)}${d.late?' (10% de desconto por atraso)':''}.`;
+      log(m2,d.late?'warn':'good'); if(!d.comp) toast(`Pedido entregue: ${brl(d.receita)}${d.late?', com atraso':''}.`,d.late?'warn':'good');
+      break;}
+    case 'quebra':{const m=`${pn(d.p)} quebrou. ${d.withTec?'O técnico já está consertando':'Sem técnico disponível: manutenção terceirizada, até 8 h parada'} (${brl(d.custo)}).`;log(m,'bad');toast(m,'bad');break;}
+    case 'reparo_fim':log(`${pn(d.p)} consertada e liberada para produzir.`,'info');break;
+    case 'pm':log(`Técnico iniciou a preventiva da ${pn(d.p)}.`,'info');break;
+    case 'pm_fim':log(`Preventiva concluída na ${pn(d.p)}. Condição da máquina em 100%.`,'good');break;
+    case 'setup_fim':log(`Setup concluído na ${pn(d.p)}: ${partById(d.p.part).nome.toLowerCase()}.`,'info');break;
+    case 'bobina':{const m=`Faltou bobina de aço na ${pn(d.p)}. Máquina parada aguardando material.`;log(m,'warn');toast(m,'warn');break;}
+    case 'dia':{log(`Dia ${d.d} fechado. Folha de pagamento: ${brl(d.pay)}.`);
+      for(const s of d.ups){const m=`${s.nome} (${ROLES[s.role].nome.toLowerCase()}) subiu para o nível ${s.lv}.`;log(m,'good');toast(m,'good');}
+      if(dayOf(S.t)>=S.nextAud) S.audPending=true;
+      break;}
+    case '8d_fim':{const m=`8D da ${d.c.cli} concluído. A causa raiz foi eliminada: ${partById(d.c.part).nome.toLowerCase()} passa a gerar menos defeito.`;log(m,'good');toast(m,'good');break;}
+  }
+}
+
+// ---------- metas ----------
+const OEE=d=>(d&&d.plan>0&&d.prod>0)?{A:d.run/d.plan,P:d.prod/d.ideal,Q:(d.prod-d.def)/d.prod,get v(){return this.A*this.P*this.Q;}}:null;
+const MISSIONS=[
+  {t:'Aceite seu primeiro pedido na aba Pedidos.',r:5000,ok:()=>S.orders.length>0||S.tot.ped>0},
+  {t:'Contrate um inspetor de qualidade para segurar peças ruins antes do cliente.',r:8000,ok:()=>S.staff.some(s=>s.role==='inspetor')},
+  {t:'Contrate um técnico de manutenção para fazer preventiva e evitar quebras longas.',r:8000,ok:()=>hasTec()},
+  {t:'Entregue 3 pedidos dentro do limite de PPM do cliente.',r:15000,ok:()=>S.hist.filter(h=>h.ppm<=h.ppmMax).length>=3},
+  {t:'Compre a segunda prensa.',r:20000,ok:()=>S.press.length>=2},
+  {t:'Conclua um 8D para eliminar a causa de uma reclamação.',r:15000,ok:()=>S.comps.some(c=>c.st==='fechada')},
+  {t:'Feche um dia com OEE acima de 65%.',r:25000,ok:()=>S.days.some(d=>{const o=OEE(d);return o&&o.v>0.65;})},
+  {t:'Seja aprovado em uma auditoria IATF.',r:30000,ok:()=>S.auds.some(a=>a.pts>=5)},
+  {t:'Compre uma prensa de 800 toneladas.',r:40000,ok:()=>S.press.some(p=>p.tipo==='p800')},
+  {t:'Entregue um pedido com limite de 400 PPM sem reclamação.',r:60000,ok:()=>S.hist.some(h=>h.ppmMax===400&&h.ppm<=400)}
+];
+function checkMissions(){
+  let m=MISSIONS[S.mis];
+  while(m&&m.ok()){S.cash+=m.r;log(`Meta cumprida: ${m.t} Bônus da diretoria: ${brl(m.r)}.`,'good');toast(`Meta cumprida! Bônus de ${brl(m.r)}.`,'good');S.mis++;m=MISSIONS[S.mis];}
+}
+
+// ---------- perguntas da auditoria ----------
+const QUIZ=[
+ {q:'A prensa ficou disponível 90% do tempo planejado, rodou a 80% da cadência ideal e 95% das peças saíram boas. Qual é o OEE?',a:['68,4%','88,3%','80,0%','95,0%'],e:'OEE = Disponibilidade × Performance × Qualidade = 0,90 × 0,80 × 0,95 = 0,684. Os três fatores se multiplicam, por isso o OEE fica sempre abaixo do pior deles.'},
+ {q:'Um lote de 20.000 peças chegou ao cliente com 30 peças defeituosas. Quantos PPM?',a:['1.500 PPM','150 PPM','15.000 PPM','30 PPM'],e:'PPM = defeituosas ÷ total × 1.000.000 = 30 ÷ 20.000 × 1.000.000 = 1.500 PPM.'},
+ {q:'Em qual disciplina do 8D a equipe identifica e comprova a causa raiz?',a:['D4','D3','D6','D8'],e:'D4 é a análise de causa raiz, com ferramentas como 5 Porquês e Ishikawa. D3 é a contenção, D6 é implementar e validar as ações corretivas e D8 é reconhecer a equipe.'},
+ {q:'O cliente reclamou de peças com rebarba. Qual é a ação de contenção (D3) mais adequada?',a:['Bloquear e selecionar 100% do estoque suspeito, na planta, em trânsito e no cliente','Trocar o fornecedor de bobina','Treinar os operadores no mês que vem','Encerrar o caso, pois o lote já foi entregue'],e:'A contenção protege o cliente na hora, enquanto a causa raiz ainda é investigada: tudo que pode estar afetado é bloqueado e selecionado.'},
+ {q:'Para que serve um estudo de MSA, como o R&R?',a:['Avaliar se o sistema de medição é confiável para o processo','Calcular a cadência ideal da prensa','Definir a quantidade de inspetores','Medir o OEE do turno'],e:'O MSA mostra quanto da variação medida vem do próprio sistema de medição (instrumento, pessoa, método). Com R&R alto, a inspeção não consegue separar peça boa de peça ruim.'},
+ {q:'A prensa teve várias microparadas e rodou abaixo da cadência nominal. Qual fator do OEE isso derruba?',a:['Performance','Qualidade','Disponibilidade','Nenhum, microparada não entra no OEE'],e:'Microparadas e velocidade reduzida são perdas de performance. Paradas longas, como quebra e setup, entram na disponibilidade.'},
+ {q:'Qual é a ideia central do SMED (troca rápida de ferramenta)?',a:['Passar tarefas do setup interno para o externo, feitas com a prensa ainda rodando','Fazer todos os setups no fim do mês','Dispensar a aprovação da primeira peça','Aumentar os lotes para não precisar trocar ferramenta'],e:'Setup interno só pode ser feito com a máquina parada. Separar matriz, ferramentas e fixadores antes (setup externo) reduz o tempo parado.'},
+ {q:'Qual norma de sistema de gestão da qualidade é específica da cadeia automotiva?',a:['IATF 16949','ISO 14001','ISO 45001','ISO 27001'],e:'A IATF 16949 complementa a ISO 9001 com requisitos do setor automotivo. A ISO 14001 é ambiental, a ISO 45001 trata de saúde e segurança, e a ISO 27001 de segurança da informação.'},
+ {q:'Qual a vantagem da manutenção preventiva sobre a corretiva?',a:['A parada é planejada e curta, antes de a falha acontecer','Ela dispensa técnicos na planta','Ela aumenta a tonelagem da prensa','Ela é feita só depois da quebra'],e:'A preventiva é programada, dura menos e evita a quebra. A corretiva acontece de surpresa, demora mais e pode derrubar um pedido com prazo apertado.'},
+ {q:'Refugo interno ou peça ruim que chega ao cliente: o que custa mais?',a:['A peça que chega ao cliente: seleção, frete, multa e perda de confiança','O refugo interno, porque gasta aço','Os dois custam o mesmo','Nenhum dos dois gera custo'],e:'Pegar o defeito na planta custa o material. Deixar escapar custa seleção no cliente, multa, 8D e reputação. Quanto mais tarde o defeito aparece, mais caro fica.'},
+ {q:'Em que disciplina do 8D se atualizam PFMEA, plano de controle e instruções de trabalho para o problema não voltar?',a:['D7','D2','D5','D1'],e:'D7 é prevenir a recorrência: padronizar a solução na documentação (PFMEA, plano de controle, instruções) e levar a lição para produtos parecidos.'}
+];
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// ---------- auditoria ----------
+function auditChecks(){
+  const E=effects(S);
+  const last=S.hist.slice(-10);
+  const otd=last.length?last.filter(h=>!h.late).length/last.length:1;
+  const abertas=S.comps.filter(c=>c.st!=='fechada').length;
+  return [
+    {ok:E.M.n>0,t:'Instrumentos calibrados e estudo de MSA em dia',c:'IATF 16949, 7.1.5.1.1',f:E.M.n?'Metrologista na equipe.':'Nenhum metrologista: calibração e MSA sem responsável.'},
+    {ok:E.tecCov>=1,t:'Manutenção preventiva planejada para todas as prensas',c:'IATF 16949, 8.5.1.5',f:`Técnicos cobrem ${Math.round(E.tecCov*100)}% das prensas.`},
+    {ok:E.I.cov>=1,t:'Inspeção e controle cobrindo todas as prensas',c:'IATF 16949, 8.6',f:`Inspetores cobrem ${Math.round(E.I.cov*100)}% das prensas.`},
+    {ok:abertas===0,t:'Reclamações de cliente tratadas com 8D concluído',c:'IATF 16949, 10.2.3',f:abertas?`${abertas} reclamação(ões) sem 8D concluído.`:'Nenhuma reclamação pendente.'},
+    {ok:otd>=0.9,t:'Entregas no prazo acima de 90%',c:'IATF 16949, 9.1.2.1',f:last.length?`${pct(otd)} nas últimas ${last.length} entregas.`:'Nenhuma entrega ainda.'}
+  ];
+}
+function showAudit(){
+  S.qAsked=S.qAsked||[];
+  let pool=QUIZ.map((q,i)=>i).filter(i=>!S.qAsked.includes(i)); if(!pool.length){S.qAsked=[];pool=QUIZ.map((q,i)=>i);}
+  const qi=pick(pool); S.qAsked.push(qi);
+  const q=QUIZ[qi];
+  audit={checks:auditChecks(),qi,ans:shuffle(q.a.map((t,i)=>({t,right:i===0}))),picked:null};
+  renderAudit();
+}
+function renderAudit(){
+  const q=QUIZ[audit.qi], a=audit;
+  const ck=a.checks.map(c=>`<li><i class="${c.ok?'good':'bad'}">${c.ok?'✓':'✗'}</i><div><div>${c.t} <span class="tiny">(${c.c})</span></div><div class="tiny">${c.f}</div></div></li>`).join('');
+  let res='';
+  if(a.picked!==null){
+    const right=a.ans[a.picked].right;
+    const pts=a.checks.filter(c=>c.ok).length+(right?1:0);
+    const v=pts>=5?{t:'Aprovada',c:'good',d:'Sem não conformidades graves. O cliente amplia o contrato: reputação +8 e bônus de R$ 20.000.'}:pts>=3?{t:'Aprovada com não conformidades',c:'warn',d:'A planta precisa apresentar plano de ação. Reputação sem alteração.'}:{t:'Reprovada',c:'bad',d:'Clientes colocam a planta em alerta: reputação −10 e custo de R$ 15.000 com reauditoria.'};
+    res=`<div class="card"><div class="tiny">${right?'Resposta certa.':'Resposta errada.'} ${q.e}</div></div>
+      <div class="verdict ${v.c}">${v.t}: ${pts} de 6 pontos</div><p class="muted">${v.d}</p>
+      <button class="btn wide" data-act="auditEnd" data-arg="${pts}">Voltar para a fábrica</button>`;
+  }
+  openModal(`<div class="brand">Auditoria IATF 16949, dia ${dayOf(S.t)}</div><h2>O auditor chegou</h2>
+    <p class="muted">Cada item atendido vale 1 ponto. A pergunta do auditor vale o sexto ponto. Com 5 ou mais, a planta é aprovada.</p>
+    <ul class="check">${ck}</ul>
+    <h3>Pergunta do auditor</h3><p>${q.q}</p>
+    <div class="answers">${a.ans.map((x,i)=>`<button data-act="auditAns" data-arg="${i}" ${a.picked!==null?'disabled':''} class="${a.picked!==null?(x.right?'right':(i===a.picked?'wrong':'')):''}">${x.t}</button>`).join('')}</div>
+    ${res}`,'audit');
+}
+
+// ---------- modais ----------
+function openModal(html,kind){$('#mbody').innerHTML=html;$('#modal').hidden=false;modal=kind;document.body.classList.add('locked');}
+function closeModal(){$('#modal').hidden=true;modal=null;document.body.classList.remove('locked');sig='';}
+function confirmModal(txt,act,arg,label){
+  openModal(`<h2>Tem certeza?</h2><p class="muted">${txt}</p><div class="row wrap"><button class="btn danger" data-act="${act}" data-arg="${arg||''}">${label}</button><button class="btn ghost" data-act="close">Cancelar</button></div>`,'confirm');
+}
+function showStart(){
+  openModal(`<div class="brand">Golpe de Prensa</div><h2>Você é o novo gerente da planta</h2>
+  <p class="muted">A estamparia começa com uma prensa de 400 t, um operador e ${brl(120000)} em caixa. Aceite pedidos das montadoras, compre prensas, contrate a equipe certa e mantenha OEE alto e PPM baixo.</p>
+  <ul class="check">
+    <li><i class="info">›</i><div>O tempo corre sozinho. Use Pausar, 1×, 3× e 10× no topo.</div></li>
+    <li><i class="info">›</i><div>Cada entrega é medida em PPM. Passou do limite do cliente, vira reclamação e pede 8D.</div></li>
+    <li><i class="info">›</i><div>A cada 7 dias chega uma auditoria IATF com uma pergunta sobre os conceitos. A aba Manual explica tudo.</div></li>
+  </ul>
+  <label for="plantInput">Nome da sua planta</label>
+  <input type="text" id="plantInput" maxlength="40" placeholder="Estamparia Aço Norte" autocomplete="off">
+  <button class="btn wide" data-act="start">Abrir a fábrica</button>`,'start');
+}
+function showOver(){
+  openModal(`<h2 class="bad">A diretoria fechou a planta</h2>
+  <p class="muted">O caixa passou de ${brl(BANKRUPT)}. Você chegou ao dia ${dayOf(S.t)}, entregou ${S.tot.ped} pedidos e cumpriu ${S.mis} de ${MISSIONS.length} metas.</p>
+  <p class="muted">Dica: prensa sem pedido e reclamação de cliente são os maiores ralos de dinheiro. Aceite só o que a capacidade aguenta e cuide do PPM.</p>
+  <button class="btn wide" data-act="restart">Começar uma nova planta</button>`,'over');
+}
+
+// ---------- valores ao vivo ----------
+const ST_TXT={run:'Produzindo',setup:'Setup',broken:'Quebrada',pm:'Preventiva',nomat:'Falta de bobina',noop:'Sem operador',idle:'Parada sem pedido'};
+function pressState(p){
+  let t=ST_TXT[p.st]||p.st;
+  if(['setup','broken','pm','nomat'].includes(p.st)) t+=`, volta em ${dur(p.rem)}`;
+  if(p.st==='setup') t+=p.prep?` (preparador ${staffById(p.prep)?.nome.split(' ')[0]||''})`:' (sem preparador, o operador faz sozinho)';
+  if(p.st==='run'){const op=staffById(p.op);const o=orderById(p.ped);if(o){const E=effects(S);const perf=Math.min(0.97,opPerf(op.lv)+E.lead);t+=`, ${num(PRESSES[p.tipo].gpm*perf)} golpes/min`;}}
+  return t;
+}
+function todayAgg(){const a=newDay();for(const p of S.press){for(const k of ['plan','run','prod','ideal','def','scrap','esc','brk'])a[k]+=p.day[k];for(const k in a.loss)a.loss[k]+=p.day.loss[k];}return a;}
+function kpis(){
+  const y=S.days[S.days.length-1]; const o=OEE(y);
+  const l5=S.hist.slice(-5); const q=l5.reduce((a,h)=>a+h.qtd,0), e=l5.reduce((a,h)=>a+h.esc,0);
+  const l10=S.hist.slice(-10);
+  return {oee:o?pct(o.v):'–',ppm:q?num(e/q*1e6):'–',otd:l10.length?pct(l10.filter(h=>!h.late).length/l10.length):'–',aud:(()=>{const d=S.nextAud-dayOf(S.t);return d<=0?'hoje':d===1?'amanhã':`em ${d} dias`;})()};
+}
+function live(k){
+  const [a,id]=k.split(':');
+  switch(a){
+    case 'clock':return `Dia ${dayOf(S.t)}, ${hhmm(S.t)}`;
+    case 'cash':return brl(S.cash);
+    case 'rep':return `${Math.round(S.rep)}/100`;
+    case 'npress':return `${S.press.length}/${MAX_PRESSES}`;
+    case 'nstaff':return String(S.staff.length);
+    case 'k-oee':return kpis().oee;
+    case 'k-ppm':return kpis().ppm;
+    case 'k-otd':return kpis().otd;
+    case 'k-aud':return kpis().aud;
+    case 'pst':{const p=pressById(id);return p?pressState(p):'';}
+    case 'pcond':{const p=pressById(id);return p?`${Math.round(p.cond)}%`:'';}
+    case 'oprog':{const o=orderById(id);return o?`${num(Math.min(o.good,o.qtd))} de ${num(o.qtd)} peças`:'';}
+    case 'oppm':{const o=orderById(id);if(!o)return '';const tot=o.good+o.esc;return tot>0?`PPM até agora: ${num(o.esc/Math.max(1,o.good)*1e6)} (limite ${num(o.ppm)})`:`Limite do cliente: ${num(o.ppm)} PPM`;}
+    case 'odue':{const o=orderById(id);if(!o)return '';const r=o.due-S.t;return r>=0?`Prazo em ${dur(r)}`:`Atrasado há ${dur(-r)}`;}
+    case '8d':{const c=S.comps.find(x=>x.id===id);if(!c||c.st!=='8d')return '';return `Conclui em ${dur(c.fim-S.t)}`;}
+  }
+  return '';
+}
+function liveW(k){
+  const [a,id]=k.split(':');
+  if(a==='pcond'){const p=pressById(id);return p?p.cond:0;}
+  if(a==='oprog'){const o=orderById(id);return o?Math.min(100,o.good/o.qtd*100):0;}
+  if(a==='prem'){const p=pressById(id);return p&&p.remTot?100-p.rem/p.remTot*100:0;}
+  return 0;
+}
+function liveCls(k){
+  const [a,id]=k.split(':');
+  if(a==='oppm'){const o=orderById(id);if(!o||o.good<=0)return '';return o.esc/o.good*1e6>o.ppm?'bad':'good';}
+  if(a==='odue'){const o=orderById(id);if(!o)return '';const r=o.due-S.t;return r<0?'bad':r<DAY/2?'warn':'';}
+  if(a==='pst'){const p=pressById(id);return p?'state st-'+p.st:'';}
+  if(a==='cash')return 'cash num'+(S.cash<0?' neg':'');
+  return null;
+}
+function updateLive(){
+  document.querySelectorAll('[data-l]').forEach(el=>{const k=el.dataset.l;const v=live(k);if(el.textContent!==v)el.textContent=v;const c=liveCls(k);if(c!==null){const base=el.dataset.base||'';const cn=(base+' '+c).trim();if(el.className!==cn)el.className=cn;}});
+  document.querySelectorAll('[data-w]').forEach(el=>{el.style.width=clamp(liveW(el.dataset.w),0,100)+'%';});
+  document.querySelectorAll('[data-cost]').forEach(b=>{if(!b.hasAttribute('data-lock'))b.disabled=S.cash<+b.dataset.cost;});
+}
+
+// ---------- telas ----------
+function signature(){
+  const P=S.press.map(p=>[p.id,p.st,p.op,p.ped,p.part,p.cond<40?2:p.cond<65?1:0].join(':')).join('|');
+  const parts=[tab,modal,P,S.orders.map(o=>o.id+(o.press||'')).join(','),S.board.map(o=>o.id).join(','),S.staff.map(s=>s.id+s.lv).join(','),S.comps.map(c=>c.id+c.st).join(','),S.days.length,S.mis,S.hist.length,S.speed,hasTec()];
+  if(tab==='fabrica')parts.push(S.log.length?S.log[0].t+S.log[0].txt:'');
+  if(tab==='equipe')parts.push(S.cands.map(c=>c.id).join(','));
+  if(tab==='qualidade')parts.push(oeeView,oeeView==='hoje'?Math.floor(S.t/30):0,S.comps.some(c=>c.st==='8d')?Math.floor(S.t/60):0);
+  return parts.join('#');
+}
+function render(){
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.arg===tab?'page':'false'));
+  document.querySelectorAll('.speed button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.arg===S.speed)));
+  $('#plantName').textContent=S.nome;
+  const alertP=S.press.filter(p=>['broken','noop','nomat'].includes(p.st)||(p.st==='idle'&&S.orders.some(o=>!o.press&&partById(o.part).t<=PRESSES[p.tipo].t))).length;
+  const idle=S.press.filter(p=>!p.ped).length;
+  const openC=S.comps.filter(c=>c.st==='aberta').length;
+  setBadge('#b-fab',alertP);setBadge('#b-ped',idle&&S.board.length?idle:0);setBadge('#b-qual',openC);
+  const m=MISSIONS[S.mis];
+  $('#mission').innerHTML=m?`<div class="mission"><span class="tag">Meta ${S.mis+1}/${MISSIONS.length}</span><span>${m.t}</span><span class="rw">Bônus ${brl(m.r)}</span></div>`:`<div class="mission"><span class="tag">Metas</span><span>Todas as metas cumpridas. Agora é buscar OEE acima de 85% e PPM abaixo de 400.</span></div>`;
+  const v=$('#view');
+  v.innerHTML=tab==='fabrica'?vFabrica():tab==='pedidos'?vPedidos():tab==='equipe'?vEquipe():tab==='qualidade'?vQualidade():vManual();
+  updateLive();
+}
+function setBadge(sel,n){const b=$(sel);b.hidden=!n;b.textContent=n;}
+const bar=(key,cls='')=>`<div class="bar ${cls}"><i data-w="${key}"></i></div>`;
+const L=(key,base='')=>`<span data-l="${key}" data-base="${base}" class="${base}"></span>`;
+
+function vFabrica(){
+  const E=effects(S);
+  const ops=S.staff.filter(s=>s.role==='operador');
+  const cards=S.press.map(p=>{
+    const P=PRESSES[p.tipo], o=orderById(p.ped);
+    const opts=['<option value="">Sem operador</option>'].concat(ops.filter(s=>s.id===p.op||!S.press.some(x=>x.op===s.id)).map(s=>`<option value="${s.id}" ${s.id===p.op?'selected':''}>${esc(s.nome)}, nível ${s.lv}</option>`)).join('');
+    const busy=['setup','broken','pm'].includes(p.st);
+    const pmBtn=hasTec()?`<button class="btn sm ghost" data-act="pm" data-arg="${p.id}" ${busy?'disabled data-lock':''}>Preventiva agora</button>`
+      :`<button class="btn sm ghost" data-act="pm" data-arg="${p.id}" data-cost="${PM_EXT}" ${busy?'disabled data-lock':''}>Preventiva terceirizada ${brl(PM_EXT)}</button>`;
+    const alert=['broken','noop','nomat'].includes(p.st);
+    return `<article class="card press ${alert?'alert':''}">
+      <div class="ph"><canvas class="px" data-press="${p.id}" width="48" height="40" aria-label="Prensa ${p.n}"></canvas>
+        <div class="grow" style="display:flex;flex-direction:column;gap:4px">
+          <h3>Prensa ${p.n}<span class="ton">${P.t} t</span></h3>
+          ${L('pst:'+p.id,'state')}
+          ${['setup','broken','pm','nomat'].includes(p.st)?bar('prem:'+p.id,p.st==='broken'?'r':p.st==='pm'?'b':'y'):''}
+          <label class="tiny" for="op-${p.id}">Operador</label>
+          <select id="op-${p.id}" data-act="setop" data-arg="${p.id}">${opts}</select>
+        </div></div>
+      <div class="ord">${o?`<div class="row between wrap"><b>${partById(o.part).nome}</b><span class="tiny">${esc(o.cli)}</span></div>
+        ${bar('oprog:'+o.id,'y')}<div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div>
+        <div class="tiny">${L('oppm:'+o.id)}</div>`
+        :`<div class="tiny">Sem pedido. ${S.orders.some(x=>!x.press&&partById(x.part).t>P.t)?'Os pedidos na fila precisam de mais tonelagem.':'Aceite pedidos na aba Pedidos.'}</div>`}</div>
+      <div class="ord"><div class="barlab"><span>Condição da máquina</span>${L('pcond:'+p.id)}</div>${bar('pcond:'+p.id,p.cond<40?'r':p.cond<65?'y':'')}
+        <div class="row wrap between"><span class="tiny">${hasTec()?(E.tecCov>=1?'Técnicos fazem preventiva quando a condição cai.':'Técnicos não cobrem todas as prensas.'):'Sem técnico: a condição só volta com preventiva ou depois de quebrar.'}</span>${pmBtn}</div></div>
+    </article>`;}).join('');
+  const full=S.press.length>=MAX_PRESSES;
+  const buy=Object.entries(PRESSES).map(([k,P])=>`<div class="card">
+    <div class="row between"><h3>${P.nome}</h3><b class="num">${brl(P.preco)}</b></div>
+    <dl class="facts"><div><dt>Cadência ideal</dt><dd>${P.gpm} golpes/min</dd></div><div><dt>Capacidade/dia</dt><dd>${num(P.gpm*DAY)} peças</dd></div></dl>
+    <div class="tiny">Estampa: ${PARTS.filter(x=>x.t<=P.t).map(x=>x.nome.toLowerCase()).join(', ')}.</div>
+    <button class="btn wide" data-act="buy" data-arg="${k}" data-cost="${P.preco}" ${full?'disabled data-lock':''}>${full?'Galpão cheio':'Comprar'}</button></div>`).join('');
+  const lg=S.log.slice(0,10).map(l=>`<li class="${l.k}"><time>D${dayOf(l.t)} ${hhmm(l.t)}</time><span>${esc(l.txt)}</span></li>`).join('');
+  return `<section class="panel"><div class="phead"><h2>Chão de fábrica</h2><span class="tiny">A luz no topo de cada prensa é o andon: verde produz, amarelo em setup, azul em preventiva, vermelho parada.</span></div>
+    <div class="grid">${cards}</div></section>
+  <section class="panel"><h2>Diário do turno</h2>${lg?`<ul class="log">${lg}</ul>`:'<p class="empty">Nada aconteceu ainda. Aceite um pedido para ligar a prensa.</p>'}</section>
+  <section class="panel"><div class="phead"><h2>Comprar prensa</h2><span class="tiny">${S.press.length} de ${MAX_PRESSES} posições do galpão ocupadas</span></div>
+    <p class="muted">Prensa maior estampa peças maiores e mais caras, mas bate mais devagar. Cada prensa nova precisa de um operador.</p>
+    <div class="grid">${buy}</div></section>`;
+}
+
+function vPedidos(){
+  const maxT=Math.max(0,...S.press.map(p=>PRESSES[p.tipo].t));
+  const act=S.orders.map(o=>{const pr=o.press?pressById(o.press):null;const part=partById(o.part);
+    return `<div class="card"><div class="row between wrap"><b>${part.nome}</b><span class="tiny">${esc(o.cli)}</span></div>
+      <div class="tiny">${pr?`Na Prensa ${pr.n}`:`Na fila: aguardando prensa de ${part.t} t ou maior livre`}. R$ ${o.preco.toLocaleString('pt-BR',{minimumFractionDigits:2})} por peça, limite de ${num(o.ppm)} PPM.</div>
+      ${bar('oprog:'+o.id,'y')}<div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div><div class="tiny">${L('oppm:'+o.id)}</div></div>`;}).join('');
+  const board=S.board.map(o=>{const part=partById(o.part);const can=part.t<=maxT;
+    return `<div class="card"><div class="row between wrap"><b>${part.nome}</b><span class="pill ${o.ppm<=800?'warn':'muted'}">${num(o.ppm)} PPM</span></div>
+      <div class="tiny">${esc(o.cli)}. Oferta válida por mais ${dur(o.exp-S.t)}.</div>
+      <dl class="facts"><div><dt>Quantidade</dt><dd>${num(o.qtd)}</dd></div><div><dt>Preço/peça</dt><dd>R$ ${o.preco.toLocaleString('pt-BR',{minimumFractionDigits:2})}</dd></div>
+        <div><dt>Valor do pedido</dt><dd>${brl(o.qtd*o.preco)}</dd></div><div><dt>Aço por peça</dt><dd>R$ ${part.mat.toLocaleString('pt-BR',{minimumFractionDigits:2})}</dd></div>
+        <div><dt>Prazo</dt><dd>${o.dias} ${o.dias>1?'dias':'dia'}</dd></div><div><dt>Prensa mínima</dt><dd>${part.t} t</dd></div></dl>
+      <button class="btn wide" data-act="accept" data-arg="${o.id}" ${can?'':'disabled data-lock'}>${can?'Aceitar pedido':`Precisa de prensa de ${part.t} t`}</button></div>`;}).join('');
+  return `<section class="panel"><div class="phead"><h2>Em produção e na fila</h2><span class="tiny">${S.orders.length} pedido(s) aceitos</span></div>
+    <p class="muted">A fila puxa primeiro o pedido que usa a matriz já montada, para evitar setup, e depois o de prazo mais curto. Aceitar mais do que as prensas aguentam gera atraso.</p>
+    ${act?`<div class="grid">${act}</div>`:'<p class="empty">Nenhum pedido aceito. Escolha um abaixo.</p>'}</section>
+  <section class="panel"><div class="phead"><h2>Pedidos das montadoras</h2><span class="tiny">Novos pedidos chegam todo dia</span></div>
+    <p class="muted">O limite de PPM é o máximo de peças defeituosas por milhão que o cliente aceita receber. Com reputação maior, os clientes pagam mais e exigem PPM menor.</p>
+    ${board?`<div class="grid">${board}</div>`:'<p class="empty">Nenhuma oferta no momento. Novos pedidos chegam na virada do dia.</p>'}</section>`;
+}
+
+function vEquipe(){
+  const E=effects(S), n=S.press.length;
+  const covTxt=r=>{const i=roleInfo(S,r);if(r==='operador'){const a=S.press.filter(p=>p.op).length;return `${a} de ${n} prensas com operador`;}
+    if(r==='preparador')return i.n?`${i.n} para fazer setups`:'Setup feito pelo operador (3 h)';
+    if(r==='metrologista')return i.n?'Calibração e MSA em dia':'Sem responsável por calibração';
+    return `Cobrem ${Math.round(i.cov*100)}% das prensas`;};
+  const sum=ROLE_ORDER.map(r=>{const c=S.staff.filter(s=>s.role===r).length;return `<div><dt>${ROLES[r].pl}: ${c}</dt><dd style="font-weight:500;font-size:14px">${covTxt(r)}</dd></div>`;}).join('');
+  const groups=ROLE_ORDER.map(r=>{const ms=S.staff.filter(s=>s.role===r);if(!ms.length)return '';
+    return `<h3>${ROLES[r].pl}</h3><div class="grid">${ms.map(s=>{const p=S.press.find(x=>x.op===s.id);const need=xpNeed(s.lv);
+      return `<div class="card"><div class="row between wrap"><b>${esc(s.nome)}</b><span class="pill">Nível ${s.lv}</span></div>
+      <div class="tiny">${ROLES[r].nome}${r==='operador'?`, ${p?'na Prensa '+p.n:'sem prensa'}`:''}. Salário ${brl(salario(s))} por dia.</div>
+      <div class="barlab"><span>Experiência</span><span class="num">${s.lv>=MAXLV?'nível máximo':`${Math.floor(s.xp)} de ${need} dias`}</span></div>
+      <div class="bar b"><i style="width:${s.lv>=MAXLV?100:clamp(s.xp/need*100,0,100)}%"></i></div>
+      <div class="row wrap"><button class="btn sm" data-act="train" data-arg="${s.id}" ${s.lv>=MAXLV?'disabled data-lock':`data-cost="${trainCost(s)}"`}>${s.lv>=MAXLV?'Nível máximo':`Treinar ${brl(trainCost(s))}`}</button>
+      <button class="btn sm danger" data-act="fire" data-arg="${s.id}" ${S.staff.length<=1?'disabled data-lock':''}>Desligar</button></div></div>`;}).join('')}</div>`;}).join('');
+  const cands=S.cands.map(c=>`<div class="card"><div class="row between wrap"><b>${esc(c.nome)}</b><span class="pill">Nível ${c.lv}</span></div>
+    <div><b style="color:var(--yel)">${ROLES[c.role].nome}</b></div><div class="tiny">${ROLES[c.role].desc}</div>
+    <dl class="facts"><div><dt>Salário por dia</dt><dd>${brl(salario(c))}</dd></div><div><dt>Admissão</dt><dd>${brl(admissao(c))}</dd></div></dl>
+    <button class="btn wide" data-act="hire" data-arg="${c.id}" data-cost="${admissao(c)}">Contratar</button></div>`).join('');
+  return `<section class="panel"><h2>Cobertura da equipe</h2><p class="muted">Líderes cobrem até 4 prensas; inspetores e técnicos, até 3. Um metrologista atende a planta toda.</p><dl class="facts">${sum}</dl></section>
+  <section class="panel"><div class="phead"><h2>Candidatos no RH</h2><span class="tiny">Novos candidatos todo dia. Com mais reputação, aparecem profissionais mais experientes.</span></div><div class="grid">${cands}</div></section>
+  <section class="panel"><div class="phead"><h2>Sua equipe</h2><span class="tiny">Folha diária: ${brl(S.staff.reduce((a,s)=>a+salario(s),0))}</span></div>
+    <p class="muted">Todo mundo ganha experiência a cada dia trabalhado. O treinamento sobe um nível na hora.</p>${groups}</section>`;
+}
+
+function vQualidade(){
+  const d=oeeView==='ontem'?S.days[S.days.length-1]:todayAgg();
+  const o=OEE(d);
+  const f=o?`<div class="formula">
+    <div class="f"><span>Disponibilidade</span><span class="calc">tempo produzindo ÷ tempo planejado = ${hrs(d.run)} ÷ ${hrs(d.plan)}</span><b>${pct(o.A)}</b></div>
+    <div class="f"><span>Performance</span><span class="calc">peças produzidas ÷ capacidade ideal no tempo produzindo = ${num(d.prod)} ÷ ${num(d.ideal)}</span><b>${pct(o.P)}</b></div>
+    <div class="f"><span>Qualidade</span><span class="calc">peças boas ÷ peças produzidas = ${num(d.prod-d.def)} ÷ ${num(d.prod)}</span><b>${pct(o.Q)}</b></div>
+    <div class="f total"><span>OEE</span><span class="calc">${pct(o.A)} × ${pct(o.P)} × ${pct(o.Q)}</span><b>${pct(o.v)}</b></div></div>`
+    :`<p class="empty">${oeeView==='ontem'?'O primeiro dia ainda não fechou. Veja o parcial de hoje.':'Nenhuma prensa com pedido hoje ainda.'}</p>`;
+  const LC={setup:['Setup','var(--yel)'],brk:['Quebra','var(--red)'],mat:['Falta de bobina','var(--orange)'],pm:['Preventiva','var(--blue)'],noop:['Sem operador','var(--grey)']};
+  let losses='';
+  if(d&&d.plan>0){const tot=Object.values(d.loss).reduce((a,b)=>a+b,0);
+    losses=tot>0?`<div class="stack">${Object.entries(d.loss).filter(([k,v])=>v>0).map(([k,v])=>`<i style="width:${v/tot*100}%;background:${LC[k][1]}"></i>`).join('')}</div>
+      <div class="legend">${Object.entries(d.loss).filter(([k,v])=>v>0).map(([k,v])=>`<span style="--c:${LC[k][1]}">${LC[k][0]} ${hrs(v)}</span>`).join('')}</div>`:'<p class="tiny">Nenhuma parada no período. Disponibilidade de 100%.</p>';}
+  const days=S.days.slice(-10);
+  const hist=days.length?`<div class="hist">${days.map(x=>{const v=OEE(x)?.v||0;return `<div class="col"><span>${v?Math.round(v*100)+'%':'–'}</span><i class="${v>=0.65?'hi':v<0.4?'lo':''}" style="height:${Math.max(2,v*100)}%"></i></div>`;}).join('')}</div><div class="histx">${days.map(x=>`<span>D${x.d}</span>`).join('')}</div>`:'<p class="empty">O histórico aparece depois do primeiro dia.</p>';
+  const rows=S.hist.slice(-8).reverse().map(h=>`<tr><td>D${h.dia}</td><td>${esc(h.cli)}</td><td>${partById(h.part).nome}</td><td class="r">${num(h.qtd)}</td><td class="r">${num(h.esc)}</td><td class="r ${h.ppm>h.ppmMax?'bad':'good'}">${num(h.ppm)}</td><td class="r">${num(h.ppmMax)}</td><td class="${h.late?'warn':''}">${h.late?'Atrasado':'No prazo'}</td></tr>`).join('');
+  const hasI=S.staff.some(s=>s.role==='inspetor');
+  const D8=['D1','D2','D3','D4','D5','D6','D7','D8'];
+  const comps=S.comps.slice().reverse().filter((c,i)=>c.st!=='fechada'||i<6).map(c=>{
+    let steps='',act='';
+    if(c.st==='aberta'){act=`<button class="btn" data-act="open8d" data-arg="${c.id}" data-cost="${COST_8D}">Abrir 8D ${brl(COST_8D)}</button><span class="tiny">${hasI?'Com inspetor, leva 1 dia.':'Sem inspetor na equipe, leva 2 dias.'}</span>`;}
+    else{const f=c.st==='fechada'?1:clamp((S.t-c.ini)/(c.fim-c.ini),0,1);const cur=Math.min(7,Math.floor(f*8));
+      steps=`<div class="steps">${D8.map((x,i)=>`<span class="${c.st==='fechada'||i<cur?'done':i===cur?'now':''}">${x}</span>`).join('')}</div>`;
+      act=c.st==='fechada'?'<span class="tiny good">Concluído. Defeito dessa peça reduzido.</span>':L('8d:'+c.id,'tiny');}
+    return `<div class="card"><div class="row between wrap"><b>${esc(c.cli)}</b><span class="pill ${c.st==='fechada'?'good':c.st==='aberta'?'bad':'warn'}">${c.st==='fechada'?'Encerrada':c.st==='aberta'?'Sem 8D':'8D em andamento'}</span></div>
+      <div class="tiny">Dia ${c.dia}. ${partById(c.part).nome}: ${num(c.ppm)} PPM, limite ${num(c.ppmMax)}.</div>${steps}<div class="row wrap">${act}</div></div>`;}).join('');
+  const ck=auditChecks().map(c=>`<li><i class="${c.ok?'good':'bad'}">${c.ok?'✓':'✗'}</i><div>${c.t} <span class="tiny">${c.f}</span></div></li>`).join('');
+  const dA=S.nextAud-dayOf(S.t);
+  return `<section class="panel"><div class="phead"><h2>OEE: eficiência global do equipamento</h2>
+      <div class="seg" role="group" aria-label="Período"><button data-act="oeeView" data-arg="ontem" aria-pressed="${oeeView==='ontem'}">Ontem</button><button data-act="oeeView" data-arg="hoje" aria-pressed="${oeeView==='hoje'}">Hoje até agora</button></div></div>
+    <p class="muted">Soma de todas as prensas, só no tempo em que tinham pedido. Referência de classe mundial: 85%.</p>${f}
+    ${losses?`<h3>Onde a disponibilidade foi perdida</h3>${losses}`:''}
+    <h3>OEE por dia</h3>${hist}</section>
+  <section class="panel"><h2>Reclamações e 8D</h2>
+    <p class="muted">Cada reclamação precisa de um 8D. Ao concluir, a causa raiz é eliminada e a peça passa a gerar menos defeito. A auditoria cobra reclamações sem 8D.</p>
+    ${comps?`<div class="grid">${comps}</div>`:'<p class="empty">Nenhuma reclamação de cliente. Continue assim.</p>'}</section>
+  <section class="panel"><h2>PPM das entregas</h2>
+    <p class="muted">PPM = peças defeituosas que chegaram ao cliente ÷ peças entregues × 1.000.000. Refugo pego dentro da planta não entra no PPM, mas derruba a qualidade do OEE.</p>
+    ${rows?`<div class="tbl"><table><thead><tr><th>Dia</th><th>Cliente</th><th>Peça</th><th class="r">Entregue</th><th class="r">Defeituosas</th><th class="r">PPM</th><th class="r">Limite</th><th>Prazo</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="empty">Nenhuma entrega ainda.</p>'}</section>
+  <section class="panel"><div class="phead"><h2>Próxima auditoria IATF</h2><span class="tiny">${dA<=0?'Hoje':dA===1?'Amanhã':`Em ${dA} dias (dia ${S.nextAud})`}</span></div>
+    <p class="muted">Situação atual dos itens que o auditor vai verificar. O sexto ponto é uma pergunta sobre os conceitos do Manual.</p><ul class="check">${ck}</ul></section>`;
+}
+
+function vManual(){
+  const C=(t,body)=>`<div class="concept"><h3>${t}</h3>${body}</div>`;
+  return `<section class="panel"><h2>Como jogar</h2>
+    <p class="muted">Você é o gerente da planta. Aceite pedidos, mantenha as prensas rodando com operador, compre máquinas maiores e monte uma equipe que segure OEE alto e PPM baixo. Siga as metas no topo para ganhar bônus da diretoria. Se o caixa passar de ${brl(BANKRUPT)}, a planta fecha. O progresso fica salvo neste aparelho.</p></section>
+  <section class="panel"><h2>Conceitos da planta</h2>
+  ${C('OEE (Overall Equipment Effectiveness)',`<p class="muted">Mede quanto do tempo planejado virou peça boa na velocidade ideal. É o produto de três fatores:</p>
+    <div class="eq">OEE = Disponibilidade × Performance × Qualidade</div>
+    <p class="muted"><b>Disponibilidade</b>: tempo produzindo ÷ tempo planejado. Cai com quebra, setup, falta de material e máquina sem operador.<br>
+    <b>Performance</b>: peças produzidas ÷ o que a máquina faria na cadência ideal. Cai com ritmo lento e microparadas. No jogo, operadores experientes e líderes aumentam a performance.<br>
+    <b>Qualidade</b>: peças boas ÷ peças produzidas. Cai com refugo e retrabalho.<br>
+    Exemplo: 90% × 80% × 95% = 68,4%. A referência de classe mundial costuma ser 85%.</p>`)}
+  ${C('PPM (partes por milhão)',`<div class="eq">PPM = peças defeituosas no cliente ÷ peças entregues × 1.000.000</div>
+    <p class="muted">30 peças ruins num lote de 20.000 dão 1.500 PPM. Cada cliente define um limite. Passou do limite, vira reclamação, com custo de seleção, multa e queda de reputação.</p>`)}
+  ${C('Refugo interno × escape para o cliente',`<p class="muted">O defeito é gerado na prensa. Se o operador ou o inspetor pega, vira refugo: custa o aço, mas não sai da planta. Se escapa, chega ao cliente e entra no PPM. Por isso inspeção e metrologia confiáveis valem mais do que parecem.</p>`)}
+  ${C('Setup e SMED',`<p class="muted">Setup é a troca de matriz para estampar outra peça. Com a prensa parada, é perda de disponibilidade. O SMED (troca rápida de ferramenta) separa o setup interno, que exige máquina parada, do externo, que pode ser preparado antes. No jogo, um preparador experiente reduz o setup de 3 h para até 30 min, e a fila prioriza pedidos que usam a matriz já montada.</p>`)}
+  ${C('Manutenção preventiva × corretiva',`<p class="muted">A condição da prensa cai com o uso. Quanto pior a condição, maior a chance de quebra e mais defeito ela gera. A preventiva é curta e planejada. A corretiva vem de surpresa, é mais longa e mais cara. Técnicos na equipe fazem a preventiva sozinhos, no momento certo, que é a lógica do TPM.</p>`)}
+  ${C('8D: as oito disciplinas',`<ol class="d8">
+    <li><b>D1</b><span class="muted">Formar a equipe multidisciplinar.</span></li>
+    <li><b>D2</b><span class="muted">Descrever o problema com dados: o quê, onde, quando, quanto.</span></li>
+    <li><b>D3</b><span class="muted">Conter: bloquear e selecionar tudo que pode estar afetado para proteger o cliente.</span></li>
+    <li><b>D4</b><span class="muted">Identificar e comprovar a causa raiz (5 Porquês, Ishikawa), inclusive por que o defeito não foi detectado.</span></li>
+    <li><b>D5</b><span class="muted">Escolher as ações corretivas permanentes.</span></li>
+    <li><b>D6</b><span class="muted">Implementar e validar que as ações funcionaram.</span></li>
+    <li><b>D7</b><span class="muted">Prevenir a recorrência: atualizar PFMEA, plano de controle e instruções.</span></li>
+    <li><b>D8</b><span class="muted">Reconhecer a equipe e encerrar.</span></li></ol>`)}
+  ${C('MSA e calibração',`<p class="muted">Não adianta inspecionar com um sistema de medição que não é confiável. A calibração garante que o instrumento mede certo; o MSA (como o estudo de R&R) mostra quanto da variação vem do próprio sistema de medição. No jogo, o metrologista deixa todos os inspetores mais eficazes.</p>`)}
+  ${C('IATF 16949',`<p class="muted">Norma de sistema de gestão da qualidade da cadeia automotiva, que complementa a ISO 9001. O auditor do jogo verifica itens reais da norma: sistema de medição (7.1.5.1.1), manutenção preventiva e TPM (8.5.1.5), liberação de produtos (8.6), solução de problemas (10.2.3) e desempenho de entrega ao cliente (9.1.2.1).</p>`)}
+  ${C('Entrega no prazo (OTD)',`<p class="muted">Percentual de pedidos entregues até a data combinada. Atraso dá 10% de desconto no pedido e derruba a reputação. Planeje a capacidade antes de aceitar: o prazo começa a contar no aceite, e o setup também consome tempo.</p>`)}
+  </section>
+  <section class="panel"><h2>Recomeçar</h2><p class="muted">Apaga o progresso deste aparelho e abre uma planta nova.</p><div><button class="btn danger" data-act="reset">Recomeçar do zero</button></div></section>`;
+}
+
+// ---------- ações ----------
+const ACT={
+  tab:a=>{tab=a;sig='';window.scrollTo({top:0});},
+  speed:a=>{S.speed=+a;sig='';},
+  close:()=>closeModal(),
+  start:()=>{const n=($('#plantInput').value||'').trim();S=newState(n||'Estamparia Aço Norte');S.speed=1;log('A fábrica abriu. Aceite o primeiro pedido na aba Pedidos.','info');closeModal();save();},
+  accept:id=>{const o=S.board.find(x=>x.id===id);if(!o)return;acceptOrder(S,o);log(`Pedido aceito: ${num(o.qtd)} peças (${partById(o.part).nome.toLowerCase()}) para ${o.cli}, prazo de ${o.dias} dia(s).`);toast('Pedido aceito.','good');},
+  buy:k=>{const P=PRESSES[k];if(S.cash<P.preco||S.press.length>=MAX_PRESSES)return;S.cash-=P.preco;const p=addPress(S,k);log(`${P.nome} instalada como Prensa ${p.n}.${p.op?'':' Contrate ou realoque um operador para ela.'}`,'good');toast(`Prensa ${p.n} instalada.${p.op?'':' Falta operador.'}`,'good');autoAssign(S);},
+  hire:id=>{const c=S.cands.find(x=>x.id===id);if(!c||S.cash<admissao(c))return;S.cash-=admissao(c);S.staff.push(c);S.cands=S.cands.filter(x=>x!==c);
+    let where='';if(c.role==='operador'){const p=S.press.find(x=>!x.op);if(p){p.op=c.id;where=` e foi para a Prensa ${p.n}`;}}
+    log(`${c.nome} (${ROLES[c.role].nome.toLowerCase()}) foi contratado${where}.`,'good');toast(`${c.nome} contratado.`,'good');},
+  train:id=>{const s=staffById(id);if(!s||s.lv>=MAXLV||S.cash<trainCost(s))return;S.cash-=trainCost(s);s.lv++;s.xp=0;log(`${s.nome} concluiu o treinamento e subiu para o nível ${s.lv}.`,'good');toast(`${s.nome} agora é nível ${s.lv}.`,'good');},
+  fire:id=>{const s=staffById(id);confirmModal(`${esc(s.nome)} sai da empresa. A rescisão custa ${brl(rescisao(s))}.`,'fireYes',id,'Desligar');},
+  fireYes:id=>{const s=staffById(id);if(!s)return closeModal();S.cash-=rescisao(s);S.staff=S.staff.filter(x=>x!==s);S.press.forEach(p=>{if(p.op===id)p.op=null;});S.prepBusy=S.prepBusy.filter(x=>x!==id);log(`${s.nome} foi desligado.`,'warn');closeModal();},
+  pm:id=>{const p=pressById(id);if(!p||['setup','broken','pm'].includes(p.st))return;
+    if(hasTec()){const E=effects(S);p.rem=Math.max(30,60-6*(E.tecLv-1));}else{if(S.cash<PM_EXT)return;S.cash-=PM_EXT;p.rem=240;}
+    p.remTot=p.rem;p.st='pm';log(`Preventiva iniciada na Prensa ${p.n}${hasTec()?'':' por empresa terceirizada (4 h)'}.`,'info');},
+  open8d:id=>{const c=S.comps.find(x=>x.id===id);if(!c||c.st!=='aberta'||S.cash<COST_8D)return;S.cash-=COST_8D;c.st='8d';c.ini=S.t;c.fim=S.t+(S.staff.some(s=>s.role==='inspetor')?1:2)*DAY;log(`8D aberto para a reclamação da ${c.cli}.`,'info');},
+  oeeView:a=>{oeeView=a;},
+  auditAns:i=>{if(audit.picked!==null)return;audit.picked=+i;renderAudit();},
+  auditEnd:pts=>{pts=+pts;S.auds.push({dia:dayOf(S.t),pts});
+    if(pts>=5){S.rep=clamp(S.rep+8,0,100);S.cash+=20000;log(`Auditoria IATF aprovada com ${pts} de 6 pontos. Bônus de R$ 20.000.`,'good');}
+    else if(pts>=3){log(`Auditoria IATF aprovada com não conformidades (${pts} de 6).`,'warn');}
+    else{S.rep=clamp(S.rep-10,0,100);S.cash-=15000;log(`Auditoria IATF reprovada (${pts} de 6). Reauditoria custou R$ 15.000.`,'bad');}
+    S.audPending=false;S.nextAud=dayOf(S.t)+7;audit=null;closeModal();save();},
+  reset:()=>confirmModal('Todo o progresso deste aparelho será apagado: prensas, equipe, caixa e metas.','resetYes','','Apagar e recomeçar'),
+  resetYes:()=>{try{localStorage.removeItem(KEY);}catch(e){}S=null;closeModal();tab='fabrica';showStart();},
+  restart:()=>{try{localStorage.removeItem(KEY);}catch(e){}S=null;closeModal();tab='fabrica';showStart();}
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button[data-act]');if(!b||b.disabled)return;
+  const f=ACT[b.dataset.act];if(!f)return;
+  f(b.dataset.arg);
+  if(S){checkMissions();if(!modal){sig='';}save();updateLive();}
+});
+document.addEventListener('change',e=>{
+  const el=e.target;if(el.dataset.act!=='setop')return;
+  const p=pressById(el.dataset.arg);if(!p)return;
+  const v=el.value||null;
+  S.press.forEach(x=>{if(x!==p&&x.op===v&&v)x.op=null;});
+  p.op=v;const s=v&&staffById(v);log(s?`${s.nome} assumiu a Prensa ${p.n}.`:`Prensa ${p.n} ficou sem operador.`,s?'':'warn');
+  el.blur();sig='';save();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&modal==='confirm')closeModal();
+  if(e.key==='Enter'&&modal==='start'&&e.target.id==='plantInput')ACT.start();
+});
+
+// ---------- desenho das prensas ----------
+const TON_COL={p400:['#3f6f9e','#5f8fbf','#2c4f73'],p600:['#4d8a5c','#6caa7a','#356441'],p800:['#a4513b','#c4715a','#76382a']};
+function drawPress(c,p,t){
+  const x=c.getContext('2d'),W=48,H=40;
+  const F=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(a,b,w,h);};
+  F(0,0,W,H,'#101419');
+  for(let i=0;i<W;i+=4)F(i,36,2,1,'#1f262e');
+  F(0,37,W,3,'#1a2027');
+  const [m,hi,sh]=TON_COL[p.tipo];
+  // colunas
+  F(7,8,5,28,m);F(7,8,1,28,hi);F(11,8,1,28,sh);
+  F(34,8,5,28,m);F(34,8,1,28,hi);F(38,8,1,28,sh);
+  // coroa
+  F(5,3,36,7,m);F(5,3,36,1,hi);F(5,9,36,1,sh);
+  F(20,5,6,2,'#f2c230');
+  // mesa/base
+  F(5,30,36,6,m);F(5,30,36,1,hi);F(5,35,36,1,sh);
+  F(12,27,22,3,'#6d7a87');F(12,27,22,1,'#95a3b0');
+  // martelo (ram)
+  let s=0;
+  if(p.st==='run'){const gpm=PRESSES[p.tipo].gpm*(S.speed||1);const ph=(t/1000)*(Math.min(gpm,120)/60)*Math.PI*2;s=Math.round(8*(0.5-0.5*Math.cos(ph)));}
+  else if(p.st==='setup'){s=2;}
+  F(22,10,2,4+s,'#95a3b0');
+  F(13,13+s,20,5,'#8a97a3');F(13,13+s,20,1,'#b7c3cd');F(13,17+s,20,1,'#58636e');
+  F(15,18+s,16,2,'#58636e');
+  // chapa
+  if(p.st==='run'||p.st==='setup')F(10,26,26,1,'#c9d3da');
+  if(p.st==='setup'){F(40,24,6,6,'#f2c230');F(41,25,4,4,'#8a6f1e');}
+  if(p.st==='broken'&&Math.floor(t/300)%2){F(20,20,1,1,'#fff4c0');F(25,22,1,1,'#ffd05e');F(18,23,1,1,'#ffd05e');}
+  // andon
+  F(43,1,4,13,'#0a0d10');
+  const blink=Math.floor(t/400)%2===0;
+  const L=[['#ec5a50','#3a1614'],['#f2c230','#3a3010'],['#5cc26b','#15321a']];
+  const on={run:[0,0,1],setup:[0,1,0],pm:[0,0,0],nomat:[0,blink?1:0,0],broken:[blink?1:0,0,0],noop:[1,0,0],idle:[0,0,0]}[p.st]||[0,0,0];
+  L.forEach((c2,i)=>F(44,2+i*4,2,3,on[i]?c2[0]:c2[1]));
+  if(p.st==='pm')F(44,2,2,11,blink?'#55a3e6':'#1a3550');
+}
+function drawPresses(t){
+  document.querySelectorAll('canvas[data-press]').forEach(c=>{const p=pressById(c.dataset.press);if(p)drawPress(c,p,RM?0:t);});
+}
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- laço principal ----------
+let lastT=performance.now(), lastDraw=0;
+function loop(now){
+  let real=(now-lastT)/1000;lastT=now;real=clamp(real,0,0.5);
+  if(S){
+    if(!S.over&&!modal&&S.speed>0&&!S.audPending){
+      let g=real*4*S.speed;
+      while(g>1e-9){const st=Math.min(2,g);simStep(S,st,ev);g-=st;if(S.audPending)break;}
+      checkMissions();
+      if(S.cash<BANKRUPT){S.over=true;}
+    }
+    if(!modal){if(S.over)showOver();else if(S.audPending)showAudit();}
+    const s=signature();
+    const selFocus=document.activeElement&&document.activeElement.tagName==='SELECT';
+    if(s!==sig&&!selFocus){sig=s;render();}else updateLive();
+    if(now-lastDraw>(RM?1000:90)){drawPresses(now);lastDraw=now;}
+    if(now-lastSave>3000){save();lastSave=now;}
+  }
+  requestAnimationFrame(loop);
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
+S=loadSave();
+if(S){render();}else{showStart();}
+requestAnimationFrame(t=>{lastT=t;loop(t);});
+
+</script>
+</body>
+</html>
